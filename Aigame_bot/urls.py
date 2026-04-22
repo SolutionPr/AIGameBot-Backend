@@ -1,23 +1,28 @@
-"""
-URL configuration for Aigame_bot project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import include, path
+from accounts.views import (
+    ForgotPasswordView,
+    LoginView,
+    LogoutView,
+    ProfileView,
+    ResetPasswordView,
+    RegisterView,
+    VerifyOTPView,
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/accounts/', include('accounts.urls')),
+    path("admin/", admin.site.urls),
+    path("api/auth/", include("accounts.auth_urls")),
+    path("api/accounts/", include("accounts.urls")),
+    path("api/", include("Game.urls")),
+    path("register", RegisterView.as_view(), name="register-alias"),
+    path("login", LoginView.as_view(), name="login-alias"),
+    path("logout", LogoutView.as_view(), name="logout-alias"),
+    path("profile", ProfileView.as_view(), name="profile-alias"),
+    path("forget-password", ForgotPasswordView.as_view(), name="forget-password-alias"),
+    path("forget/password", ForgotPasswordView.as_view(), name="forget-password-legacy-alias"),
+    path("confirm-password", VerifyOTPView.as_view(), name="confirm-password-alias"),
+    path("password-reset/request", ForgotPasswordView.as_view(), name="password-reset-request-legacy-alias"),
+    path("password-reset/confirm", VerifyOTPView.as_view(), name="password-reset-confirm-legacy-alias"),
+    path("reset-password", ResetPasswordView.as_view(), name="reset-password-alias"),
 ]
