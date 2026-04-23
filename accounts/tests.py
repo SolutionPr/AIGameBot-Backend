@@ -68,9 +68,9 @@ class RegisterViewTests(TestCase):
 
         self.assertEqual(first_response.status_code, 200)
         self.assertEqual(second_response.status_code, 200)
-        self.assertNotEqual(first_response.data["token"], second_response.data["token"])
+        self.assertNotEqual(first_response.data["access"], second_response.data["access"])
 
-    def test_login_accepts_username_identifier(self):
+    def test_login_accepts_login_identifier(self):
         User = get_user_model()
         User.objects.create_user(
             username="username-login",
@@ -82,14 +82,14 @@ class RegisterViewTests(TestCase):
 
         response = self.client.post(
             "/login",
-            {"username": "username-login", "password": "Password123!"},
+            {"login": "username-login", "password": "Password123!"},
             format="json",
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("token", response.data)
+        self.assertIn("access", response.data)
 
-    def test_profile_works_with_token_auth(self):
+    def test_profile_works_with_jwt_auth(self):
         User = get_user_model()
         User.objects.create_user(
             username="profile-user",
@@ -106,10 +106,10 @@ class RegisterViewTests(TestCase):
         )
         self.assertEqual(login_response.status_code, 200)
 
-        token = login_response.data["token"]
+        token = login_response.data["access"]
         profile_response = self.client.get(
             "/profile",
-            HTTP_AUTHORIZATION=f"Token {token}",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
         )
 
         self.assertEqual(profile_response.status_code, 200)

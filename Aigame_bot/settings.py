@@ -71,9 +71,9 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = [
     "https://api-aigamebot.elyriasoft.com",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://0f34-49-43-105-165.ngrok-free.app",
+    "https://aigamebot.elyriasoft.com",
+    
+    
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
