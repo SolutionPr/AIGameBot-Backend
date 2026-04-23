@@ -1,4 +1,4 @@
-from django.contrib.auth import get_user_model, login, logout, update_session_auth_hash
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.core.mail import send_mail
@@ -7,10 +7,11 @@ from datetime import timedelta
 import secrets
 from django.utils import timezone
 from rest_framework import permissions, status
-from rest_framework.authtoken.models import Token
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView
 
 from .models import PasswordResetOTP, Profile
 from .serializers import (
@@ -49,61 +50,32 @@ class RegisterView(APIView):
         with transaction.atomic():
             user = serializer.save()
             get_or_create_profile(user)
-            token, _ = Token.objects.get_or_create(user=user)
 
+        refresh = RefreshToken.for_user(user)
         return Response(
             {
                 "message": "Registration successful.",
                 "user": UserSerializer(user).data,
-                "token": token.key,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "token": str(refresh.access_token),
             },
             status=status.HTTP_201_CREATED,
         )
 
 
-class LoginView(APIView):
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
 
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
-        identifier = (
-            serializer.validated_data.get("email")
-            or serializer.validated_data.get("username")
-            or serializer.validated_data.get("login")
-        )
+class LogoutView(TokenBlacklistView):
+    permission_classes = [permissions.AllowAny]
 
-        if "@" in identifier:
-            user = User.objects.filter(email__iexact=identifier).first()
-        else:
-            user = User.objects.filter(username__iexact=identifier).first()
-
-        if not user or not user.check_password(serializer.validated_data["password"]):
-            return Response(
-                {"message": "Invalid login credentials."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-        Token.objects.filter(user=user).delete()
-        token = Token.objects.create(user=user)
-        return Response(
-            {
-                "message": "Login successful.",
-                "user": UserSerializer(user).data,
-                "token": token.key,
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class LogoutView(APIView):
-    def post(self, request):
-        if request.auth:
-            request.auth.delete()
-        logout(request)
-        return Response({"message": "Logout successful."}, status=status.HTTP_200_OK)
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        response.data = {"message": "Logout successful."}
+        return response
 
 
 class ProfileView(RetrieveUpdateAPIView):
@@ -161,14 +133,14 @@ class ChangePasswordView(APIView):
 
         user.set_password(serializer.validated_data["new_password"])
         user.save()
-        update_session_auth_hash(request, user)
-        Token.objects.filter(user=user).delete()
-        token = Token.objects.create(user=user)
+        refresh = RefreshToken.for_user(user)
 
         return Response(
             {
                 "message": "Password updated successfully.",
-                "token": token.key,
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+                "token": str(refresh.access_token),
             },
             status=status.HTTP_200_OK,
         )
@@ -298,7 +270,6 @@ class ResetPasswordView(APIView):
         reset_otp.is_verified = False
         reset_otp.verified_at = None
         reset_otp.save(update_fields=["is_used", "is_verified", "verified_at", "updated_at"])
-        Token.objects.filter(user=user).delete()
 
         return Response(
             {"message": "Password has been reset successfully."},

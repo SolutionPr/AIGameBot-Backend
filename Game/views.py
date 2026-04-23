@@ -12,7 +12,7 @@ from .services import GameConfigGenerationError, generate_game_config_with_groq
 
 
 class GenerateGameConfigView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     """
     POST /api/generate/
@@ -60,6 +60,7 @@ class GenerateGameConfigView(APIView):
             "success": True,
             "saved": False,
             "config": config,
+            "authenticated_user": getattr(request.user, "username", None),
         }
  
         # Save to DB if requested

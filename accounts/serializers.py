@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.utils.text import slugify
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
 
 from .models import Profile
 
@@ -121,11 +123,27 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        if not attrs.get("email") and not attrs.get("username") and not attrs.get("login"):
+        identifier = attrs.get("email") or attrs.get("username") or attrs.get("login")
+        if not identifier:
             raise serializers.ValidationError(
                 {"email": "Provide email, username, or login."}
             )
-        return attrs
+
+        if "@" in identifier:
+            user = User.objects.filter(email__iexact=identifier).first()
+        else:
+            user = User.objects.filter(username__iexact=identifier).first()
+
+        if not user or not user.check_password(attrs["password"]):
+            raise AuthenticationFailed("Invalid login credentials.")
+
+        refresh = RefreshToken.for_user(user)
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": UserSerializer(user).data,
+            "message": "Login successful.",
+        }
 
 
 class ChangePasswordSerializer(serializers.Serializer):
