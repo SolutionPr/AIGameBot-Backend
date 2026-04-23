@@ -4,16 +4,27 @@ Django settings for Aigame_bot project.
 
 import os
 from pathlib import Path
-from datetime import timedelta 
+from datetime import timedelta
 from dotenv import load_dotenv
 from corsheaders.defaults import default_headers
+
+# ---------------- BASE ---------------- #
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
-SECRET_KEY = "django-insecure-)+i+*3%uswe*e%ma=2-k=%zm&+put7wkx^pp$5dqer(f1kd3c2"
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
+SECRET_KEY = os.getenv("SECRET_KEY", "unsafe-secret-key")
+
+DEBUG = os.getenv("DEBUG", "False") == "True"
+
+ALLOWED_HOSTS = [
+    "api-aigamebot.elyriasoft.com",
+    "aigamebot.elyriasoft.com",
+    "localhost",
+    "127.0.0.1",
+]
+
+# ---------------- APPS ---------------- #
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -28,65 +39,65 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
 ]
 
+# ---------------- MIDDLEWARE ---------------- #
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # IMPORTANT: top placement
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    
 ]
-REST_FRAMEWORK = { 
 
-    'DEFAULT_AUTHENTICATION_CLASSES': [ 
+# ---------------- CORS ---------------- #
 
-        'rest_framework_simplejwt.authentication.JWTAuthentication', 
-
-    ], 
-
-    'DEFAULT_PERMISSION_CLASSES': [ 
-
-        'rest_framework.permissions.IsAuthenticated', 
-
-    ], 
-
-} 
-
- 
-SIMPLE_JWT = { 
-
-    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=180), 
-
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7), 
-
-    'ROTATE_REFRESH_TOKENS':  True, 
-
-    'BLACKLIST_AFTER_ROTATION': True, 
-
-} 
-
+CORS_ALLOW_ALL_ORIGINS = False  # NEVER True in production
 
 CORS_ALLOWED_ORIGINS = [
-    "https://api-aigamebot.elyriasoft.com",
     "https://aigamebot.elyriasoft.com",
-    "http://localhost:3000/",
-    
-    
+    "https://api-aigamebot.elyriasoft.com",
+    "http://localhost:3000",
 ]
+
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
 ]
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+
 CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOW_HEADERS = list(default_headers) + [
+    "authorization",
+    "content-type",
     "ngrok-skip-browser-warning",
 ]
 
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
+# ---------------- CSRF ---------------- #
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://aigamebot.elyriasoft.com",
+    "https://api-aigamebot.elyriasoft.com",
+]
+
+# ---------------- URL / APP ---------------- #
+
 ROOT_URLCONF = "Aigame_bot.urls"
+WSGI_APPLICATION = "Aigame_bot.wsgi.application"
+ASGI_APPLICATION = "Aigame_bot.asgi.application"
+
+# ---------------- TEMPLATES ---------------- #
 
 TEMPLATES = [
     {
@@ -103,66 +114,74 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "Aigame_bot.wsgi.application"
-ASGI_APPLICATION = "Aigame_bot.asgi.application"
-
-DB_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.postgresql")
-DB_NAME = os.getenv("DB_NAME", "aigame_bot")
-DB_USER = os.getenv("DB_USER", "postgres")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
-DB_PORT = os.getenv("DB_PORT", "5432")
+# ---------------- DATABASE ---------------- #
 
 DATABASES = {
     "default": {
-        "ENGINE": DB_ENGINE,
-        "NAME": DB_NAME,
-        "USER": DB_USER,
-        "PASSWORD": DB_PASSWORD,
-        "HOST": DB_HOST,
-        "PORT": DB_PORT,
+        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.getenv("DB_NAME", "aigame_bot"),
+        "USER": os.getenv("DB_USER", "postgres"),
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": os.getenv("DB_HOST", "127.0.0.1"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
+# ---------------- AUTH ---------------- #
+
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
+
+# ---------------- REST FRAMEWORK ---------------- #
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+# ---------------- JWT ---------------- #
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=180),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+}
+
+# ---------------- INTERNATIONAL ---------------- #
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+
+# ---------------- STATIC ---------------- #
+
 STATIC_URL = "static/"
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
-}
+# ---------------- EMAIL ---------------- #
 
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no-reply@example.com")
+
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL",
+    EMAIL_HOST_USER or "no-reply@example.com"
+)
+
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
+
 if not EMAIL_BACKEND:
     if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
         EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -172,3 +191,8 @@ if not EMAIL_BACKEND:
             if DEBUG
             else "django.core.mail.backends.smtp.EmailBackend"
         )
+
+# ---------------- API KEYS ---------------- #
+
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
