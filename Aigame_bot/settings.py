@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from datetime import timedelta 
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -69,9 +70,10 @@ SIMPLE_JWT = {
 
 
 CORS_ALLOWED_ORIGINS = [
-    
     "https://api-aigamebot.elyriasoft.com",
-   
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://0f34-49-43-105-165.ngrok-free.app",
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
@@ -79,6 +81,9 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 ]
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "ngrok-skip-browser-warning",
+]
 
 ROOT_URLCONF = "Aigame_bot.urls"
 

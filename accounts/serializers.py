@@ -118,15 +118,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False)
-    username = serializers.CharField(required=False)
     login = serializers.CharField(required=False)
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        identifier = attrs.get("email") or attrs.get("username") or attrs.get("login")
+        identifier = attrs.get("email") or attrs.get("login")
         if not identifier:
             raise serializers.ValidationError(
-                {"email": "Provide email, username, or login."}
+                {"email": "Provide email or login."}
             )
 
         if "@" in identifier:
