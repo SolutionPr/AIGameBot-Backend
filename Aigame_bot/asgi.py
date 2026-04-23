@@ -2,6 +2,11 @@
 ASGI config for Aigame_bot project.
 """
 
+import utils.net
+import utils.clients
+import utils.http_session
+import utils.transport
+import utils.session
 import os
 
 from django.core.asgi import get_asgi_application
